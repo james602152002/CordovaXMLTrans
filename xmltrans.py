@@ -38,109 +38,33 @@ def folderNameSwitcher(arg):
             }
     return switcher.get(arg,"values")
 
-def isNoColor(key):
-    switcher={
-            "ConflictCounts":True,
-            "RecordsCount":True,
-            "DeadlineInHoursCnt":True,
-            "DeadlineDate":True,
-            "DeadlineInDaysCnt":True,
-            "RemindAheadOfDate":True,
-            "DocCounts":True,
-            "MinutesAgo":True,
-            "UploadedDocCnt":True,
-            "ApprovedByAuditorCnt":True,
-            "SealCnt":True,
-            "DaysCnt":True,
-            "WorkLogParticipantsHint":True,
-            "ConflictRecordsCnt":True,
-            "RemainingAnnualLeaveDays":True,
-            "RemindBeforeMinutes":True,
-            "RemindBeforeHours":True,
-            "RemindBeforeDays":True,
-            "RemindBeforeWeeks":True,
-            "PreviewTemplate":True,
-            "SelectableLogCnt":True,
-            "OptionalContractInfoCnt":True,
-            "OptionalFeeCnt":True,
-            "SelectedCnt":True,
-            "LawyerCnt":True,
-            "ContactsCnt":True,
-            "ScheduleTaskCnt":True,
-            "ScheduleCnt":True,
-            "ScheduleLogCnt":True,
-            "ScheduleCourtCnt":True,
-            "ScheduleMeetingCnt":True,
-            "ScheduleLeaveCnt":True,
-            "SecondsAgo":True,
-            "YouStillHaveOtherCnt":True,
-            "PasswordComplexity_MinLength_Hint":True,
-            "PasswordComplexity_MaxLength_Hint":True,
-            "AccountBankCnt":True
-        }
-    return  switcher.get(key, False)
-
-def isPass(key):
-    switcher={
-        "Pages_Executive_AssetsManagement":False,
-        "new":False,
-        "UserCannotBeDeleted":False,
-        "ChatUserSearch_Hint":False
-    }
-    return switcher.get(key, True)
-
-def initValueByKey(key, value):
-    filterValue = value.replace("&","&amp;").replace("'","\\'")
-    #忘记密码？ {0}.
-    if key == "PasswordChangeDontRememberMessage":
-        filterValue = filterValue.replace("{0}.","").replace(" ","")
-    if "{0}" in filterValue:
-        if isNoColor(key):
-            filterValue = filterValue.replace("{0}","%s")
-        else:
-            index = filterValue.index("{0}")
-            strLen = len("{0}")
-            length = len(filterValue)
-            lastStr = filterValue[index + strLen: length]
-            filterValue = "<Data><![CDATA[" + filterValue[0:index]
-            filterValue += "<font color=\"#5D73FA\">%s</font>"
-            filterValue += lastStr
-            filterValue += "]]></Data>"
-    return filterValue
-
 def parseXML(fileName):
-    content = ""
+    content = "const language = {\n"
     tree = ET.parse(docDirectory+"localization/"+fileName)
     root = tree.getroot()
     for text in root.findall('./texts/text'):
         key = text.get('name')
-        value = text.get('value')
-        value = value.replace("<","&lt;").replace(">","&gt;")
-        value = value.replace("\\'","")
-        if value and not "<br>" in value and key and isPass(key):
-            key  = key.replace("(","").replace(")","").replace(".","_").replace('-','_').replace(",","").replace(" ","").replace("{0}","").replace("/","").replace("!","").replace(":","ASCIICOLON").replace("0","zero__")
-            value = initValueByKey(key,value)
-            content += "    <string name=\"" + key + "\">"
-            content += value
-            content += "</string>\n"
+        value = text.get('value').replace("'","\"")
+        content += "  "
+        content += "'" + key + "': '"
+        content += value
+        content += "',\n"
+    content += "}\n\nexport default language"
     return content
 
 def writeFile(fileName,folderName):
     nameRegex = re.sub('\(.*\)',"",fileName)
     #文件路径
-    destFilePath = docDirectory+folderName
+    destFilePath = docDirectory
     #创建文件夹
     if not os.path.exists(destFilePath):
         os.makedirs(destFilePath)
     #编写xml内容
-    xmlBuilder = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-    xmlBuilder += "<resources xmlns:tools=\"http://schemas.android.com/tools\" tools:ignore=\"MissingTranslation\">\n\n"
-    xmlBuilder += parseXML(nameRegex)
-    xmlBuilder += "\n</resources>"
-    textFile = open(destFilePath+"/strings.xml","w")
+    xmlBuilder = parseXML(nameRegex)
+    textFile = open(docDirectory+"/"+folderName+".js","w")
     textFile.write(xmlBuilder)
     textFile.close()
     return
 
 for name in xmlArrs:
-    writeFile(name,folderNameSwitcher(name))
+    writeFile(name,folderNameSwitcher(name).replace("values","language"))
