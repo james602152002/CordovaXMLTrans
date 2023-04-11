@@ -44,7 +44,10 @@ def parseXML(fileName):
     root = tree.getroot()
     for text in root.findall('./texts/text'):
         key = text.get('name')
-        value = text.get('value').replace("'","\"")
+        value = text.get('value')
+        value = value.replace("\\n","")
+        value = value.replace('\n','\\n')
+        value = value.replace("'","\"")
         content += "  "
         content += "'" + key + "': '"
         content += value
@@ -61,7 +64,7 @@ def writeFile(fileName,folderName):
         os.makedirs(destFilePath)
     #编写xml内容
     xmlBuilder = parseXML(nameRegex)
-    textFile = open(docDirectory+"/"+folderName+".js","w")
+    textFile = open(docDirectory+"/"+folderName.replace("-","_")+".js","w")
     textFile.write(xmlBuilder)
     textFile.close()
     return
