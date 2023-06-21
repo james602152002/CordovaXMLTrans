@@ -39,7 +39,7 @@ def folderNameSwitcher(arg):
     return switcher.get(arg,"values")
 
 def parseXML(fileName):
-    content = "const language = {\n"
+    content = "export const language = {\n"
     tree = ET.parse(docDirectory+"localization/"+fileName)
     root = tree.getroot()
     for text in root.findall('./texts/text'):
@@ -49,10 +49,13 @@ def parseXML(fileName):
         value = value.replace('\n','\\n')
         value = value.replace("'","\"")
         content += "  "
-        content += "'" + key + "': '"
+        if "'" in key:
+            content += '"' + key + '": '+ "'"
+        else:
+            content += "'" + key + "': '"
         content += value
         content += "',\n"
-    content += "}\n\nexport default language"
+    content += "}"
     return content
 
 def writeFile(fileName,folderName):
